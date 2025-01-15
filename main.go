@@ -23,6 +23,7 @@ func main() {
 	serveMux.HandleFunc("GET /admin/metrics", apiCfg.hitsHandler)
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.resetHitsHandler)
 	serveMux.HandleFunc("GET /api/healthz", healthHandler)
+	serveMux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 
 	log.Printf("Listing on port %s: serving files from `%s`.\n", port, rootPath)
 	server := http.Server{
