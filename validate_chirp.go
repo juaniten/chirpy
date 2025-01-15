@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func handlerValidateChirp(w http.ResponseWriter, req *http.Request) {
@@ -29,10 +30,12 @@ func handlerValidateChirp(w http.ResponseWriter, req *http.Request) {
 
 	err = respondWithJSON(w, 200,
 		struct {
-			Valid bool `json:"valid"`
-		}{Valid: true})
+			CleanedBody string `json:"cleaned_body"`
+		}{
+			CleanedBody: replaceBadWords(params.Body),
+		})
 	if err != nil {
-		respondWithError(w, 500, "Error coding valid response :S")
+		respondWithError(w, 500, "Error coding response")
 		return
 	}
 }
@@ -50,4 +53,22 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error
 	w.WriteHeader(code)
 	w.Write(response)
 	return nil
+}
+
+func replaceBadWords(input string) string {
+	words := strings.Split(input, " ")
+	cleanWords := make([]string, len(words))
+	badWords := make(map[string]struct{})
+	badWords["kerfuffle"] = struct{}{}
+	badWords["sharbert"] = struct{}{}
+	badWords["fornax"] = struct{}{}
+
+	for i, word := range words {
+		if _, exists := badWords[strings.ToLower(word)]; exists {
+			cleanWords[i] = "****"
+		} else {
+			cleanWords[i] = word
+		}
+	}
+	return strings.Join(cleanWords, " ")
 }
