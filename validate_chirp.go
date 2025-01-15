@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -12,9 +11,6 @@ func handlerValidateChirp(w http.ResponseWriter, req *http.Request) {
 	type chirp struct {
 		Body string `json:"body"`
 	}
-	type validationError struct {
-		Error string `json:"error"`
-	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
@@ -22,37 +18,36 @@ func handlerValidateChirp(w http.ResponseWriter, req *http.Request) {
 	params := chirp{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		errorMessage, _ := json.Marshal(validationError{
-			Error: fmt.Sprintf("Error decoding chirp: %s", err),
-		})
-
-		w.WriteHeader(500)
-		w.Write(errorMessage)
+		respondWithError(w, 500, fmt.Sprintf("Error decoding chirp: %s", err))
 		return
 	}
 
 	if len(params.Body) > maxChirpLength {
-		errorMessage, _ := json.Marshal(validationError{
-			Error: fmt.Sprint("Chirp is too long"),
-		})
-
-		w.WriteHeader(400)
-		w.Write(errorMessage)
+		respondWithError(w, 400, "Chirp is too long")
 		return
-
 	}
 
-	data, err := json.Marshal(struct {
-		Valid bool `json:"valid"`
-	}{
-		Valid: true,
-	})
+	err = respondWithJSON(w, 200,
+		struct {
+			Valid bool `json:"valid"`
+		}{Valid: true})
 	if err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(500)
+		respondWithError(w, 500, "Error coding valid response :S")
 		return
 	}
+}
 
-	w.WriteHeader(200)
-	w.Write([]byte(data))
+func respondWithError(w http.ResponseWriter, code int, msg string) error {
+	return respondWithJSON(w, code, map[string]string{"error": msg})
+}
+
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
+	response, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
+	return nil
 }
