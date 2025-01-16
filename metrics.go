@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -22,4 +23,21 @@ func (cfg *apiConfig) hitsHandler(w http.ResponseWriter, req *http.Request) {
 				<p>Chirpy has been visited %d times!</p>
 			</body>
 		</html>`, cfg.fileserverHits.Load())))
+}
+
+func (cfg *apiConfig) resetHandler(w http.ResponseWriter, req *http.Request) {
+	if cfg.platform != "dev" {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Reset forbidden."))
+		return
+	}
+
+	err := cfg.db.DeleteUsers(req.Context())
+	if err != nil {
+		log.Printf("error deleting users: %s", err)
+	}
+
+	cfg.fileserverHits.Store(0)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Hits reset to 0 and users database reset."))
 }

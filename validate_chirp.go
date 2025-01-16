@@ -13,8 +13,6 @@ func handlerValidateChirp(w http.ResponseWriter, req *http.Request) {
 		Body string `json:"body"`
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-
 	decoder := json.NewDecoder(req.Body)
 	params := chirp{}
 	err := decoder.Decode(&params)
@@ -38,21 +36,6 @@ func handlerValidateChirp(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, 500, "Error coding response")
 		return
 	}
-}
-
-func respondWithError(w http.ResponseWriter, code int, msg string) error {
-	return respondWithJSON(w, code, map[string]string{"error": msg})
-}
-
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) error {
-	response, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(response)
-	return nil
 }
 
 func replaceBadWords(input string) string {
