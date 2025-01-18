@@ -11,9 +11,27 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
+type Chirp struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Email     sql.NullString
+	Body      string
+	UserID    uuid.UUID
+}
+
+type RefreshToken struct {
+	Token     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	UserID    uuid.UUID
+	ExpiresAt sql.NullTime
+	RevokedAt sql.NullTime
+}
+
+type User struct {
+	ID             uuid.UUID
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Email          sql.NullString
+	HashedPassword string
 }

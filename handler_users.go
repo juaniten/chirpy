@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/juaniten/chirpy/internal/auth"
+	"github.com/juaniten/chirpy/internal/database"
 )
 
 type User struct {
@@ -19,22 +21,27 @@ type User struct {
 }
 
 func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, req *http.Request) {
-	type email struct {
-		Email string `json:"email"`
+	type userInput struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 	decoder := json.NewDecoder(req.Body)
-	params := email{}
+	params := userInput{}
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 500, fmt.Sprintf("Error decoding request: %s", err))
 		return
 	}
 
+	hashed, _ := auth.HashPassword(params.Password)
 	dbUser, err := cfg.db.CreateUser(
 		req.Context(),
-		sql.NullString{
-			String: params.Email,
-			Valid:  true,
+		database.CreateUserParams{
+			HashedPassword: hashed,
+			Email: sql.NullString{
+				String: params.Email,
+				Valid:  true,
+			},
 		})
 	if err != nil {
 		respondWithError(w, 500, fmt.Sprintf("Error creating user: %s", err))
