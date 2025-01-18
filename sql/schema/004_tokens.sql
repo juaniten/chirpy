@@ -8,6 +8,7 @@ CREATE TABLE refresh_tokens(
     revoked_at TIMESTAMP,
     FOREIGN KEY (user_id)
     REFERENCES users(id)
+    ON DELETE CASCADE
 );
 
 -- +goose Down

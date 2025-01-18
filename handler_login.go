@@ -27,33 +27,33 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 	params := userInput{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("Error decoding request: %s", err))
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error decoding request: %s", err))
 		return
 	}
 
 	dbUser, err := cfg.db.Login(
 		req.Context(), sql.NullString{String: params.Email, Valid: true})
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("Error login user: %s", err))
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error login user: %s", err))
 		return
 	}
 
 	err = auth.CheckPasswordHash(params.Password, dbUser.HashedPassword)
 	if err != nil {
-		respondWithError(w, 401, "Incorrect email or password")
+		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
 		return
 	}
 
 	expirationTime := 3600
 	token, err := auth.MakeJWT(dbUser.ID, cfg.jwtSecret, time.Duration(expirationTime)*time.Second)
 	if err != nil {
-		respondWithError(w, 500, "Unable to create JWT")
+		respondWithError(w, http.StatusInternalServerError, "Unable to create JWT")
 		return
 	}
 
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		respondWithError(w, 500, "Unable to create refresh token")
+		respondWithError(w, http.StatusInternalServerError, "Unable to create refresh token")
 		return
 	}
 	_, err = cfg.db.CreateRefreshToken(req.Context(), database.CreateRefreshTokenParams{
@@ -67,10 +67,11 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
-			ID:        dbUser.ID,
-			CreatedAt: dbUser.CreatedAt,
-			UpdatedAt: dbUser.UpdatedAt,
-			Email:     dbUser.Email.String,
+			ID:          dbUser.ID,
+			CreatedAt:   dbUser.CreatedAt,
+			UpdatedAt:   dbUser.UpdatedAt,
+			Email:       dbUser.Email.String,
+			IsChirpyRed: dbUser.IsChirpyRed,
 		},
 		Token:        token,
 		RefreshToken: refreshToken,

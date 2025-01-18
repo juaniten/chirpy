@@ -49,11 +49,13 @@ func main() {
 
 	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 	serveMux.HandleFunc("GET /api/chirps/{id}", apiCfg.handlerGetChirp)
-	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
+	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
+	serveMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handlerDeleteChirp)
 
 	serveMux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 	serveMux.HandleFunc("POST /api/refresh", apiCfg.handlerRefreshToken)
-	serveMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevokeToken)
+
+	serveMux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerPolkaWebhook)
 
 	log.Printf("Listing on port %s: serving files from `%s`.\n", port, rootPath)
 	server := http.Server{
