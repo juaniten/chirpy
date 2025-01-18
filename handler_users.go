@@ -20,7 +20,7 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
-func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, req *http.Request) {
 	type userInput struct {
 		Password string `json:"password"`
 		Email    string `json:"email"`
@@ -29,7 +29,7 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, req *http.Request) {
 	params := userInput{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("Error decoding request: %s", err))
+		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Error decoding request: %s", err))
 		return
 	}
 
@@ -44,7 +44,7 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, req *http.Request) {
 			},
 		})
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("Error creating user: %s", err))
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating user: %s", err))
 	}
 
 	responseUser := User{
@@ -53,7 +53,60 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, req *http.Request) {
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email.String,
 	}
-	err = respondWithJSON(w, 201, responseUser)
+	err = respondWithJSON(w, http.StatusCreated, responseUser)
+	if err != nil {
+		log.Println("Error generating user creation response.")
+	}
+}
+
+func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, req *http.Request) {
+
+	accessToken, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		fmt.Printf("error getting refresh token from header: %v\n", err)
+		respondWithError(w, http.StatusUnauthorized, "invalid access token")
+		return
+	}
+	userId, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid access token")
+		return
+	}
+
+	type userInput struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+	decoder := json.NewDecoder(req.Body)
+	params := userInput{}
+	err = decoder.Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Error decoding request: %s", err))
+		return
+	}
+
+	hashed, _ := auth.HashPassword(params.Password)
+	dbUser, err := cfg.db.UpdateUser(
+		req.Context(),
+		database.UpdateUserParams{
+			ID:             userId,
+			HashedPassword: hashed,
+			Email: sql.NullString{
+				String: params.Email,
+				Valid:  true,
+			},
+		})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error updating user: %s", err))
+	}
+
+	responseUser := User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email.String,
+	}
+	err = respondWithJSON(w, http.StatusOK, responseUser)
 	if err != nil {
 		log.Println("Error generating user creation response.")
 	}

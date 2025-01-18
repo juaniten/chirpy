@@ -44,10 +44,13 @@ func main() {
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
 
 	serveMux.HandleFunc("GET /api/healthz", healthHandler)
-	serveMux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
+	serveMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
+	serveMux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
+
 	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 	serveMux.HandleFunc("GET /api/chirps/{id}", apiCfg.handlerGetChirp)
 	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
+
 	serveMux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 	serveMux.HandleFunc("POST /api/refresh", apiCfg.handlerRefreshToken)
 	serveMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevokeToken)

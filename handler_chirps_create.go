@@ -34,8 +34,6 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	fmt.Printf("\nToken string received: %s\n", bearerToken)
-
 	userId, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
 	if err != nil {
 		log.Printf("Error validating JWT on chirp creation: %v", err)
