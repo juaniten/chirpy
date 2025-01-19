@@ -9,9 +9,23 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/juaniten/chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, req *http.Request) {
+	log.Printf("Headers received: %v", req.Header)
+	requestApiKey, err := auth.GetAPIKey(req.Header)
+	log.Println("API KEY REQUEST: ", requestApiKey)
+	if err != nil {
+		log.Println(err)
+		respondWithError(w, http.StatusUnauthorized, "api key not present")
+		return
+	}
+	if requestApiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "invalid api key")
+		return
+	}
+
 	type eventInput struct {
 		Event string `json:"event"`
 		Data  struct {
@@ -21,7 +35,7 @@ func (cfg *apiConfig) handlerPolkaWebhook(w http.ResponseWriter, req *http.Reque
 
 	decoder := json.NewDecoder(req.Body)
 	params := eventInput{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Error decoding request: %s", err))
 		return

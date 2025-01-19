@@ -9,7 +9,39 @@ import (
 )
 
 func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request) {
-	chirps, err := cfg.db.GetChirps(req.Context())
+
+	authorId := req.URL.Query().Get("author_id")
+	if authorId == "" {
+
+		chirps, err := cfg.db.GetChirps(req.Context())
+		if err != nil {
+			log.Printf("Error getting chirps from database: %s", err)
+		}
+		createdChirps := make([]Chirp, len(chirps))
+		for i, chirp := range chirps {
+			createdChirps[i] = Chirp{
+				ID:        chirp.ID,
+				CreatedAt: chirp.CreatedAt,
+				UpdatedAt: chirp.UpdatedAt,
+				Body:      chirp.Body,
+				UserID:    chirp.UserID,
+			}
+		}
+
+		err = respondWithJSON(w, http.StatusOK, createdChirps)
+		if err != nil {
+			log.Printf("error creating response for getting chirps: %s", err)
+			return
+		}
+	}
+
+	userId, err := uuid.Parse(authorId)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid author ID")
+		return
+	}
+
+	chirps, err := cfg.db.GetChirpsByUser(req.Context(), userId)
 	if err != nil {
 		log.Printf("Error getting chirps from database: %s", err)
 	}
@@ -27,7 +59,9 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, req *http.Request)
 	err = respondWithJSON(w, http.StatusOK, createdChirps)
 	if err != nil {
 		log.Printf("error creating response for getting chirps: %s", err)
+		return
 	}
+
 }
 
 func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, req *http.Request) {
