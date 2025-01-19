@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -26,18 +24,17 @@ type Chirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, req *http.Request) {
 
 	bearerToken, err := auth.GetBearerToken(req.Header)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "bearer token not present")
+		respondWithError(w, http.StatusUnauthorized, "bearer token not present", err)
 		return
 	}
 
 	userId, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
 	if err != nil {
-		log.Printf("Error validating JWT on chirp creation: %v", err)
-		respondWithError(w, http.StatusUnauthorized, "bearer token not valid")
+		respondWithError(w, http.StatusUnauthorized, "bearer token not valid", err)
 		return
 	}
 
@@ -45,11 +42,11 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 	params := ChirpRequest{}
 	err = decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("Error decoding request: %s", err))
+		respondWithError(w, http.StatusInternalServerError, "Error decoding request: %s", err)
 		return
 	}
 	if len(params.Body) > 140 {
-		respondWithError(w, 400, "Chirp is too long")
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long", err)
 		return
 	}
 
@@ -58,7 +55,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, req *http.Reques
 		UserID: userId,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating chirp: %s", err))
+		respondWithError(w, http.StatusInternalServerError, "error creating chirp: %s", err)
 	}
 	respondWithJSON(w, http.StatusCreated, Chirp{
 		ID:        chirp.ID,
@@ -85,47 +82,4 @@ func replaceBadWords(input string) string {
 		}
 	}
 	return strings.Join(cleanWords, " ")
-}
-
-func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, req *http.Request) {
-
-	bearerToken, err := auth.GetBearerToken(req.Header)
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "bearer token not present")
-		return
-	}
-
-	userId, err := auth.ValidateJWT(bearerToken, cfg.jwtSecret)
-	if err != nil {
-		log.Printf("Error validating JWT on chirp creation: %v", err)
-		respondWithError(w, http.StatusUnauthorized, "bearer token not valid")
-		return
-	}
-
-	chirpId, err := uuid.Parse(req.PathValue("chirpID"))
-	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Chirp not found")
-		return
-	}
-
-	chirp, err := cfg.db.GetChirp(req.Context(), chirpId)
-	if err != nil {
-		log.Printf("Error retrieving chirp from database: %v", err)
-		respondWithError(w, http.StatusNotFound, "Chirp not found")
-		return
-	}
-	if userId != chirp.UserID {
-		respondWithError(w, http.StatusForbidden, "User not authorized")
-		return
-	}
-
-	err = cfg.db.DeleteChirp(req.Context(), chirpId)
-	if err != nil {
-		log.Printf("Error deleting chirp from database: %v", err)
-		respondWithError(w, http.StatusInternalServerError, "Unable to delete chirp")
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-
 }

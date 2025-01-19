@@ -52,13 +52,13 @@ func (q *Queries) DeleteUsers(ctx context.Context) error {
 	return err
 }
 
-const login = `-- name: Login :one
+const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, created_at, updated_at, email, hashed_password, is_chirpy_red FROM users 
 WHERE email = $1
 `
 
-func (q *Queries) Login(ctx context.Context, email sql.NullString) (User, error) {
-	row := q.db.QueryRowContext(ctx, login, email)
+func (q *Queries) GetUserByEmail(ctx context.Context, email sql.NullString) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,

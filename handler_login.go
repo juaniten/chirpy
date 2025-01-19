@@ -16,7 +16,6 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 		Password string `json:"password"`
 		Email    string `json:"email"`
 	}
-
 	type response struct {
 		User
 		Token        string `json:"token"`
@@ -27,33 +26,32 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 	params := userInput{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error decoding request: %s", err))
+		respondWithError(w, http.StatusInternalServerError, "Error decoding request: %s", err)
 		return
 	}
 
-	dbUser, err := cfg.db.Login(
+	dbUser, err := cfg.db.GetUserByEmail(
 		req.Context(), sql.NullString{String: params.Email, Valid: true})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Error login user: %s", err))
+		respondWithError(w, http.StatusInternalServerError, "Error login user: %s", err)
 		return
 	}
 
 	err = auth.CheckPasswordHash(params.Password, dbUser.HashedPassword)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
+		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
 		return
 	}
 
-	expirationTime := 3600
-	token, err := auth.MakeJWT(dbUser.ID, cfg.jwtSecret, time.Duration(expirationTime)*time.Second)
+	token, err := auth.MakeJWT(dbUser.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Unable to create JWT")
+		respondWithError(w, http.StatusInternalServerError, "Unable to create JWT", err)
 		return
 	}
 
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Unable to create refresh token")
+		respondWithError(w, http.StatusInternalServerError, "Unable to create refresh token", err)
 		return
 	}
 	_, err = cfg.db.CreateRefreshToken(req.Context(), database.CreateRefreshTokenParams{
@@ -61,7 +59,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, req *http.Request) {
 	})
 	if err != nil {
 		fmt.Println("error creating refresh token")
-		respondWithError(w, http.StatusInternalServerError, "unable to create refesh token")
+		respondWithError(w, http.StatusInternalServerError, "unable to create refresh token", err)
 		return
 	}
 

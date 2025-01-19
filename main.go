@@ -46,16 +46,17 @@ func main() {
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.resetHandler)
 
 	serveMux.HandleFunc("GET /api/healthz", healthHandler)
-	serveMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
-	serveMux.HandleFunc("PUT /api/users", apiCfg.handlerUpdateUser)
+	serveMux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
+	serveMux.HandleFunc("PUT /api/users", apiCfg.handlerUsersUpdate)
 
-	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
-	serveMux.HandleFunc("GET /api/chirps/{id}", apiCfg.handlerGetChirp)
-	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
+	serveMux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsGet)
+	serveMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpGet)
+	serveMux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
 	serveMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handlerDeleteChirp)
 
 	serveMux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 	serveMux.HandleFunc("POST /api/refresh", apiCfg.handlerRefreshToken)
+	serveMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevokeToken)
 
 	serveMux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerPolkaWebhook)
 
