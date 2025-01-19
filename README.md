@@ -4,7 +4,7 @@
 
 Chirpy is a simple command-line interface (CLI) application designed to mimic the core functionalities of Twitter. Users can create, read, update, and delete short messages (chirps), manage user accounts, and handle authentication securely.
 
-## Why Chirpy?¡
+## Why Chirpy?
 
 Why Chirpy, you ask? Well, every aspiring developer needs a pet project, and Chirpy is the ultimate exercise in building an API that _looks_ like it means business. Want to flex those API muscles? Dream of crafting database migrations that no one will ever migrate? Chirpy is here for you. It’s the perfect playground to hone your skills in creating a full-fledged, feature-rich CLI tool that mimics the big leagues—all while knowing that the only user might be... you. But hey, practice makes perfect, right? And what better way to practice than by building a tiny Twitter clone that lives and dies in your local environment? Chirpy: because why not?In the fast-paced world of social media, Chirpy offers a minimalist approach to communication. It allows users to interact with a Twitter-like platform directly from their terminal, providing a unique, distraction-free environment for sharing thoughts. Ideal for developers, CLI enthusiasts, or anyone looking for a lightweight alternative to traditional social media platforms.
 
